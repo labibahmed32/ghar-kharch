@@ -14,6 +14,11 @@ self.addEventListener("install", e => {
   self.skipWaiting();
 });
 
+// page se "skipWaiting" message aaye to foran naya version activate
+self.addEventListener("message", e => {
+  if (e.data === "skipWaiting") self.skipWaiting();
+});
+
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))

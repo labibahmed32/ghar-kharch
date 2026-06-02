@@ -6,6 +6,13 @@
 Ye ek baar ka setup hai (~5-7 minute). Sirf aap ke Google
 account se hoga. Bilkul free.
 
+>>> NOTE: Firebase config app mein PEHLE SE daal di gayi hai.
+>>> Aap ko ab sirf 2 cheezein on karni hain (STEP 2 aur STEP 3):
+>>>   - Firestore Database (rules ke saath)
+>>>   - Anonymous sign-in
+>>> Phir app mein sirf "Ghar code" likhna hai (STEP 5).
+>>> STEP 1 & 4 aap kar chuke hain.
+
 ----------------------------------------------------------
 STEP 1 — Firebase project banayein
 ----------------------------------------------------------

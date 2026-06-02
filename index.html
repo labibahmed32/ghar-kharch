@@ -513,34 +513,30 @@ input,select{font-family:inherit}
 <div class="sheet-bg" id="syncBg"></div>
 <div class="sheet" id="syncSheet">
   <div class="sheet-grip"></div>
-  <div class="sheet-h">☁️ Cloud sync setup</div>
-  <div class="sheet-sub">Ek baar setup karein — phir iPhone aur desktop par <b>same data</b>. Free Firebase istemal hota hai.</div>
+  <div class="sheet-h">☁️ Cloud sync</div>
+  <div class="sheet-sub">Firebase config <b>app mein pehle se daali hui hai</b> ✓. Bas neeche apna <b>Ghar code</b> likhein aur Connect dabayein. iPhone par bhi <b>wahi code</b> daalein — data sync ho jayega.</div>
 
   <div class="sync-steps">
-    <b>Kaise milega Firebase config?</b> SETUP_SYNC.txt file mein poori guide hai. Mukhtasar:
+    ⚠️ Pehli dafa: Firebase console mein ye 2 cheezein on honi chahiyein (warna error aayega):
     <ol style="margin:8px 0 0;padding-left:18px">
-      <li>console.firebase.google.com par free project banayein</li>
-      <li>Firestore Database "on" karein (test/locked mode)</li>
-      <li>Web app (&lt;/&gt;) add karke <b>firebaseConfig</b> copy karein</li>
-      <li>Anonymous sign-in "Enable" karein (Authentication)</li>
+      <li><b>Firestore Database</b> → Create (rules SETUP_SYNC.txt se)</li>
+      <li><b>Authentication → Anonymous</b> → Enable</li>
     </ol>
   </div>
 
-  <div class="field"><label>Firebase config (poora { ... } paste karein)</label>
-    <textarea id="syncConfig" rows="7" placeholder='{
-  "apiKey": "...",
-  "authDomain": "...",
-  "projectId": "...",
-  "appId": "..."
-}' style="width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);font-family:monospace;font-size:12.5px;resize:vertical"></textarea>
+  <div class="field"><label>🔑 Ghar code (apna secret — dono devices par bilkul same)</label>
+    <input type="text" id="syncCode" placeholder="jaise: ahmed-ghar-2026-xY7q" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="hint" style="background:none;border:0;padding:4px 0;color:var(--muted)">Lamba aur mushkil rakhein — yahi aap ke data ki chaabi hai. iPhone par bhi bilkul yahi.</div>
   </div>
-  <div class="field"><label>Ghar sync code (apna secret — dono devices par bilkul same likhein)</label>
-    <input type="text" id="syncCode" placeholder="jaise: ahmed-ghar-2026-xY7q" autocapitalize="off" autocorrect="off">
-    <div class="hint" style="background:none;border:0;padding:4px 0;color:var(--muted)">Lamba aur mushkil rakhein — yahi aap ke data ki chaabi hai. iPhone par bhi yahi code daalein.</div>
-  </div>
+
+  <details style="margin-bottom:14px">
+    <summary style="cursor:pointer;font-size:13px;color:var(--ink-2);font-weight:600">Apni alag Firebase config istemal karni hai? (optional)</summary>
+    <textarea id="syncConfig" rows="6" placeholder='khali chhor dein — app wali config use hogi' style="width:100%;margin-top:8px;padding:12px;border-radius:12px;border:1.5px solid var(--line);font-family:monospace;font-size:12.5px;resize:vertical"></textarea>
+  </details>
 
   <div class="live-note neutral" id="syncNote">Abhi connect nahi hua.</div>
   <button class="btn-primary" id="syncConnect">🔗 Connect &amp; Sync</button>
+  <button class="chip" id="syncPushLocal" style="width:100%;margin-top:10px;display:none">⬆️ Is device ka local data cloud par bhej do</button>
   <button class="chip" id="syncDisconnect" style="width:100%;margin-top:10px;color:var(--bad);display:none">Disconnect</button>
 </div>
 
@@ -951,6 +947,15 @@ function renderAll(){renderDash();renderEntries();renderBudget();renderReports()
 renderAll();
 
 /* ============ CLOUD SYNC (Firebase) ============ */
+// App mein built-in Firebase config (aap ke project ka). Sirf "Ghar code" chahiye hoga.
+const DEFAULT_FIREBASE={
+  apiKey:"AIzaSyDyVC13mreh4_53s7OtSyZ1DFr3y7o3ve8",
+  authDomain:"ghar-kharch-fbcb1.firebaseapp.com",
+  projectId:"ghar-kharch-fbcb1",
+  storageBucket:"ghar-kharch-fbcb1.firebasestorage.app",
+  messagingSenderId:"499276401256",
+  appId:"1:499276401256:web:402b2ac490be9c54c009dd"
+};
 const SYNC_KEY="ghar_kharch_sync";
 let cloud={status:"off",docRef:null,unsub:null,applying:false,pushTimer:null,_fs:null,_lastPushAt:0};
 const loadSyncCfg=()=>{try{return JSON.parse(localStorage.getItem(SYNC_KEY))}catch(e){return null}};
@@ -965,16 +970,38 @@ function setSyncStatus(s,msg){
   if(txt)txt.textContent=map[s][1];
   if(note&&msg){note.className="live-note "+(s==="on"?"":s==="err"?"over":"neutral");note.textContent=msg}
   const dc=$("#syncDisconnect");if(dc)dc.style.display=(s==="on"||s==="err")?"block":"none";
+  const pl=$("#syncPushLocal");if(pl)pl.style.display=(s==="on")?"block":"none";
+}
+async function forcePushLocal(){
+  if(!cloud.docRef){toast("Pehle Connect karein");return}
+  if(!confirm("Is device ka saara data cloud par bhej diya jayega (cloud ka purana data replace ho jayega). Jari rakhein?"))return;
+  state.updatedAt=Date.now();persist();
+  await pushNow();
+  toast("Local data cloud par bhej diya ✓");
 }
 
-// config JS object ya JSON dono accept karo
+// poora snippet (import/comments samet) ya sirf { ... } — dono se config nikaalo
 function parseConfig(raw){
   if(!raw)throw new Error("khali hai");
-  const m=raw.match(/\{[\s\S]*\}/); if(!m)throw new Error("{ } nahi mila");
-  let s=m[0];
-  try{return JSON.parse(s)}catch(e){}
-  s=s.replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g,'$1"$2":').replace(/'/g,'"').replace(/,\s*}/g,'}').replace(/,\s*]/g,']');
-  return JSON.parse(s);
+  let s=raw;
+  // "firebaseConfig" ke baad wala object dhoondo (warna pehla { })
+  const idx=s.indexOf("firebaseConfig");
+  let start=s.indexOf("{", idx>=0?idx:0);
+  if(start<0)throw new Error("{ } nahi mila");
+  // balanced braces se asal object kaato (import {} waale braces se bach kar)
+  let depth=0,end=-1;
+  for(let i=start;i<s.length;i++){
+    if(s[i]==="{")depth++;
+    else if(s[i]==="}"){depth--;if(depth===0){end=i;break}}
+  }
+  if(end<0)throw new Error("} band nahi hua");
+  let obj=s.slice(start,end+1);
+  try{return JSON.parse(obj)}catch(e){}
+  obj=obj.replace(/\/\/.*$/gm,"")                              // line comments
+         .replace(/([{,]\s*)([A-Za-z0-9_$]+)\s*:/g,'$1"$2":')   // keys ko quotes
+         .replace(/'/g,'"')                                     // single->double
+         .replace(/,(\s*[}\]])/g,'$1');                         // trailing comma
+  return JSON.parse(obj);
 }
 
 async function connectCloud(cfg,code,opts={}){
@@ -1047,18 +1074,38 @@ $("#syncSetupBtn").onclick=()=>{
 $("#syncBg").onclick=()=>{$("#syncBg").classList.remove("show");$("#syncSheet").classList.remove("show")};
 $("#syncConnect").onclick=async()=>{
   const raw=$("#syncConfig").value.trim(),code=$("#syncCode").value.trim();
-  if(!code){toast("Sync code likhein");return}
-  let cfg;try{cfg=parseConfig(raw)}catch(e){setSyncStatus("err","Config theek nahi: "+e.message);return}
+  if(!code){toast("Ghar code likhein");$("#syncCode").focus();return}
+  let cfg;
+  if(raw){try{cfg=parseConfig(raw)}catch(e){setSyncStatus("err","Config theek nahi: "+e.message);return}}
+  else cfg=DEFAULT_FIREBASE; // khali ho to built-in config
   saveSyncCfg({configRaw:raw,config:cfg,code});
   await connectCloud(cfg,code);
 };
 $("#syncDisconnect").onclick=disconnectCloud;
+$("#syncPushLocal").onclick=forcePushLocal;
 // auto-connect agar pehle se setup hai
 (function(){const c=loadSyncCfg();if(c&&c.config&&c.code)connectCloud(c.config,c.code,{silent:true})})();
 
-// PWA: service worker register (sirf https/hosted par chalega, file:// par nahi)
+// PWA: service worker + AUTO-UPDATE (naya version push hote hi app khud update)
 if("serviceWorker" in navigator){
-  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(refreshing)return; refreshing=true; location.reload();
+  });
+  window.addEventListener("load",async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register("sw.js");
+      reg.addEventListener("updatefound",()=>{
+        const nw=reg.installing;
+        nw&&nw.addEventListener("statechange",()=>{
+          if(nw.state==="installed"&&navigator.serviceWorker.controller) nw.postMessage("skipWaiting");
+        });
+      });
+      // har minute aur jab app dobara samne aaye to update check
+      setInterval(()=>reg.update().catch(()=>{}),60000);
+      document.addEventListener("visibilitychange",()=>{if(!document.hidden)reg.update().catch(()=>{})});
+    }catch(e){}
+  });
 }
 </script>
 </body>
