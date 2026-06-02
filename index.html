@@ -115,6 +115,20 @@ input,select{font-family:inherit}
 .kv .k{color:var(--ink-2);font-size:13.5px;font-weight:500;display:flex;align-items:center;gap:9px}
 .kv .k .ki{font-size:16px}
 .kv .v2{font-weight:700;font-size:14px}
+/* stat-grid system (month summary) */
+.mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini-stat{background:var(--surface-2);border:1px solid var(--line);border-radius:13px;padding:12px 13px}
+.mini-stat .ms-lbl{font-size:11.5px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-stat .ms-val{font-size:16px;font-weight:800;margin-top:5px;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-stat .ms-sub{font-size:11px;font-weight:600;color:var(--muted);margin-top:2px}
+.ms-hero{grid-column:1/-1;background:linear-gradient(135deg,#ecfdf5,#f0fdf4);
+  border:1px solid #bbf7d0;padding:14px 16px}
+.ms-hero .ms-lbl{color:#15803d}
+.ms-hero .ms-val{font-size:24px}
+.ms-hero .ms-bar{height:7px;background:#fff;border-radius:5px;overflow:hidden;margin-top:9px;border:1px solid #bbf7d0}
+.ms-hero .ms-bar > i{display:block;height:100%;border-radius:5px}
+.ms-over{background:linear-gradient(135deg,#fef2f2,#fee2e2)!important;border-color:#fecaca!important}
+.ms-over .ms-lbl{color:#b91c1c}
 
 /* hero remaining card */
 .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:0;overflow:hidden;margin-bottom:20px}
@@ -304,11 +318,17 @@ input,select{font-family:inherit}
   .tabbar{display:flex}
   .month-sel input{width:96px;font-size:13px}
   /* Entries mobile par poori nazar aayein (text wrap ho) */
-  .entry{align-items:flex-start;padding:12px 14px}
-  .entry .e-ic{margin-top:1px}
+  .entry{align-items:flex-start;padding:13px 14px;gap:11px}
+  .entry .e-ic{margin-top:1px;width:38px;height:38px}
+  .entry .e-mid{min-width:0}
   .entry .e-title{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;line-height:1.35}
-  .entry .e-del{opacity:.6;align-self:center}
+  .entry .e-amt{align-self:center;font-size:15px}
+  .entry .e-del{opacity:.55;align-self:center}
   .day-head{font-size:11px}
+  /* mobile par entries page ka summary chhupao — entries full focus */
+  #view-entries .side-col{display:none}
+  #view-entries .cols{gap:0}
+  .mini-stat .ms-val{font-size:15px}
 }
 </style>
 </head>
@@ -652,14 +672,24 @@ function renderDash(){
   // most-spent category
   const topCatObj=[...state.cats].map(c=>({c,v:spentCat(c.id,curMonth)})).sort((a,b)=>b.v-a.v)[0];
   const safeDaily=daysLeft>0?left/daysLeft:0;
+  const usedPct=bud>0?Math.min(100,sp/bud*100):0;
+  const topCatName=topCatObj&&topCatObj.v>0?topCatObj.c.icon+" "+topCatObj.c.name:"—";
+  const topCatVal=topCatObj&&topCatObj.v>0?PKR(topCatObj.v):"";
   $("#monthMini").innerHTML=`
-    <div class="kv"><span class="k"><span class="ki">💰</span>Remaining (unused)</span><span class="v2" style="color:${left<0?'var(--bad)':'var(--good)'};font-size:16px">${PKR(left)}</span></div>
-    <div class="kv"><span class="k"><span class="ki">🏆</span>Sab se zyada is par</span><span class="v2">${topCatObj&&topCatObj.v>0?topCatObj.c.icon+" "+topCatObj.c.name:"—"}<small style="display:block;font-weight:600;color:var(--bad)">${topCatObj&&topCatObj.v>0?PKR(topCatObj.v):""}</small></span></div>
-    <div class="kv"><span class="k"><span class="ki">📊</span>Roz ka average</span><span class="v2">${PKR(days>0?sp/days:0)}</span></div>
-    <div class="kv"><span class="k"><span class="ki">💸</span>Ab roz kar sakte</span><span class="v2" style="color:${safeDaily<0?'var(--bad)':'var(--good)'}">${inCur&&daysLeft>0?PKR(safeDaily)+"/din":"—"}</span></div>
-    <div class="kv"><span class="k"><span class="ki">📅</span>Sab se mehanga din</span><span class="v2">${topDay?new Date(topDay).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+" · "+PKR(topDayVal):"—"}</span></div>
-    <div class="kv"><span class="k"><span class="ki">📝</span>Total entries</span><span class="v2">${ents.length}</span></div>
-    <div class="kv"><span class="k"><span class="ki">⏳</span>Days left</span><span class="v2">${inCur?daysLeft+" din":"—"}</span></div>`;
+    <div class="mini-grid">
+      <div class="mini-stat ms-hero ${left<0?'ms-over':''}">
+        <div class="ms-lbl">💰 Remaining (unused)</div>
+        <div class="ms-val" style="color:${left<0?'#b91c1c':'#15803d'}">${PKR(left)}</div>
+        <div class="ms-sub" style="color:${left<0?'#b91c1c':'#15803d'}">Used ${PKR(sp)} of ${PKR(bud)} · ${Math.round(usedPct)}%</div>
+        <div class="ms-bar"><i style="width:${usedPct}%;background:${left<0?'var(--bad)':'var(--good)'}"></i></div>
+      </div>
+      <div class="mini-stat"><div class="ms-lbl">🏆 Top category</div><div class="ms-val">${topCatName}</div><div class="ms-sub" style="color:var(--bad)">${topCatVal}</div></div>
+      <div class="mini-stat"><div class="ms-lbl">📅 Biggest day</div><div class="ms-val">${topDay?PKR(topDayVal):"—"}</div><div class="ms-sub">${topDay?new Date(topDay).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):""}</div></div>
+      <div class="mini-stat"><div class="ms-lbl">📊 Daily average</div><div class="ms-val">${PKR(days>0?sp/days:0)}</div></div>
+      <div class="mini-stat"><div class="ms-lbl">💸 Safe / day</div><div class="ms-val" style="color:${safeDaily<0?'var(--bad)':'var(--good)'}">${inCur&&daysLeft>0?PKR(safeDaily):"—"}</div></div>
+      <div class="mini-stat"><div class="ms-lbl">📝 Entries</div><div class="ms-val">${ents.length}</div></div>
+      <div class="mini-stat"><div class="ms-lbl">⏳ Days left</div><div class="ms-val">${inCur?daysLeft:"—"}</div></div>
+    </div>`;
 
   // ----- top spending categories (vertical mini rows) -----
   const ranked=[...state.cats].map(c=>({c,sp:spentCat(c.id,curMonth)})).filter(x=>x.sp>0).sort((a,b)=>b.sp-a.sp).slice(0,5);
