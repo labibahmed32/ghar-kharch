@@ -1,0 +1,79 @@
+==========================================================
+   GHAR KHARCH — APP KO ONLINE KAREIN (GitHub Pages) — FREE
+   iPhone + Desktop dono par "app" jaisa install
+==========================================================
+
+Isse ek HTTPS link milega (jaise:
+https://aapka-naam.github.io/ghar-kharch/) jise iPhone aur
+desktop dono par app ki tarah install kar sakte hain.
+
+----------------------------------------------------------
+STEP 1 — GitHub account
+----------------------------------------------------------
+1. https://github.com  → "Sign up" (free) → account banayein.
+   (Pehle se hai to sirf login karein.)
+
+----------------------------------------------------------
+STEP 2 — Naya repository banayein
+----------------------------------------------------------
+1. Upar right "+" → "New repository".
+2. Repository name:  ghar-kharch
+3. "Public" chunein.
+4. "Create repository".
+
+----------------------------------------------------------
+STEP 3 — Files upload karein
+----------------------------------------------------------
+1. Naye repo page par link: "uploading an existing file".
+2. Apne computer se ye FOLDER ki SAARI files drag karein:
+        g:\Ghr khrch
+   Inhe upload karna zaruri hai:
+        index.html
+        manifest.json
+        sw.js
+        icon-192.png
+        icon-512.png
+        apple-touch-icon.png
+   (README/SETUP/HOST .txt files optional hain. build-icons.js
+    ki zarurat nahi — chahe to chhor dein.)
+3. Neeche "Commit changes" (green button).
+
+----------------------------------------------------------
+STEP 4 — GitHub Pages on karein
+----------------------------------------------------------
+1. Repo mein upar "Settings" → bائيں menu "Pages".
+2. "Source": Deploy from a branch.
+3. Branch:  main   /   folder:  / (root)   → "Save".
+4. 1-2 minute intezaar. Page refresh karein.
+5. Upar link aa jayega:
+        https://AAPKA-USERNAME.github.io/ghar-kharch/
+   Yahi aap ki app ka pata hai.
+
+----------------------------------------------------------
+STEP 5 — iPhone par install (Add to Home Screen)
+----------------------------------------------------------
+1. iPhone par SAFARI mein woh link kholein.
+2. Neeche "Share" (▢↑) button.
+3. "Add to Home Screen" → "Add".
+4. Home screen par "Ghar Kharch" icon aa jayega — tap karein,
+   fullscreen app ki tarah chalegi (offline bhi).
+
+----------------------------------------------------------
+STEP 6 — Desktop par install (Chrome/Edge)
+----------------------------------------------------------
+1. Chrome/Edge mein link kholein.
+2. Address bar ke daهيne "Install" (⊕ / monitor) icon par click.
+   (Ya menu ⋮ → "Install Ghar Kharch…")
+3. Alag window mein app ki tarah khulegi, Start Menu mein bhi aayegi.
+
+----------------------------------------------------------
+UPDATE kaise karein (baad mein)
+----------------------------------------------------------
+- Repo mein "Add file → Upload files" se nayi index.html upload
+  kar ke commit karein. Kuch der baad app khud update ho jayegi.
+
+==========================================================
+ZARURI: Dono devices par SAME data ke liye Firebase sync
+bhi setup karein — SETUP_SYNC.txt dekhein.
+Sirf hosting se har device ka data alag rahega.
+==========================================================

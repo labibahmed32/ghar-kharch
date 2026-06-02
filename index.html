@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<title>Ghar Kharch · Household Budget</title>
+<!-- PWA / installable app -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<!-- iPhone (Add to Home Screen) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ghar Kharch">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1f8; --surface:#ffffff; --surface-2:#f7f8fc;
+  --ink:#161c2d; --ink-2:#5a6580; --muted:#8a94a8; --line:#e7eaf2;
+  --primary:#4f46e5; --primary-soft:#eef0fe; --primary-ink:#4338ca;
+  --good:#16a34a; --good-soft:#e8f7ee; --warn:#d97706; --warn-soft:#fdf3e5;
+  --bad:#dc2626; --bad-soft:#fdecec;
+  --shadow:0 1px 2px rgba(20,30,60,.04), 0 8px 24px rgba(20,30,60,.06);
+  --shadow-lg:0 10px 40px rgba(20,30,60,.16);
+  --r:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font-family:"Inter",system-ui,-apple-system,Segoe UI,sans-serif;
+  background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:0;background:none}
+input,select{font-family:inherit}
+.muted{color:var(--muted)} .ink2{color:var(--ink-2)}
+
+/* ---------- App shell ---------- */
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:11px;padding:0 8px 22px}
+.brand .mark{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;font-size:20px;
+  box-shadow:0 6px 16px rgba(79,70,229,.35)}
+.brand .name{font-weight:800;font-size:16px;letter-spacing:-.2px}
+.brand .tag{font-size:11px;color:var(--muted);font-weight:500}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;
+  color:var(--ink-2);font-weight:600;font-size:14px;text-decoration:none;transition:.15s}
+.nav a .ni{font-size:18px;width:20px;text-align:center}
+.nav a:hover{background:var(--surface-2);color:var(--ink)}
+.nav a.active{background:var(--primary-soft);color:var(--primary-ink)}
+.side-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line)}
+.side-foot button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;
+  border-radius:10px;color:var(--ink-2);font-weight:600;font-size:13px}
+.side-foot button:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ---------- Main ---------- */
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{position:sticky;top:0;z-index:15;background:rgba(238,241,248,.85);backdrop-filter:blur(10px);
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:18px 28px;border-bottom:1px solid var(--line)}
+.page-title{font-size:22px;font-weight:800;letter-spacing:-.4px}
+.page-sub{font-size:13px;color:var(--muted);font-weight:500;margin-top:1px}
+.top-actions{display:flex;align-items:center;gap:10px}
+.month-sel{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);
+  border-radius:11px;padding:8px 12px;font-weight:600;font-size:13px;color:var(--ink-2);box-shadow:var(--shadow)}
+.month-sel input{border:0;background:none;font-weight:700;color:var(--ink);outline:none;width:130px}
+.btn-primary{display:inline-flex;align-items:center;gap:7px;background:var(--primary);color:#fff;
+  font-weight:700;font-size:14px;padding:11px 16px;border-radius:11px;box-shadow:0 6px 16px rgba(79,70,229,.3);transition:.15s}
+.btn-primary:hover{background:#4338ca;transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.content{padding:24px 32px 120px;max-width:1480px;width:100%;margin:0 auto}
+.cols{display:grid;gap:18px;align-items:start}
+.side-col{display:flex;flex-direction:column;gap:18px}
+@media(min-width:1000px){
+  .cols.c-2{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+  .cols.c-2e{grid-template-columns:1fr 1fr}
+  .side-col .card{position:relative}
+}
+.view{display:none;animation:fade .25s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- Cards / grid ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:20px}
+.section-h{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
+.section-h h3{margin:0;font-size:16px;font-weight:700}
+.grid-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.stat{padding:18px 20px}
+.stat .lbl{font-size:13px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:7px}
+.stat .val{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-top:8px}
+.stat .dot{width:9px;height:9px;border-radius:3px}
+.stat .meta{font-size:12px;font-weight:600;margin-top:6px}
+.up{color:var(--bad)} .down{color:var(--good)}
+/* side-panel mini rows */
+.mini-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.mini-row:last-child{border-bottom:0}
+.mini-row .m-ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:18px;flex-shrink:0}
+.mini-row .m-mid{flex:1;min-width:0}
+.mini-row .m-name{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-row .m-sub{font-size:12px;color:var(--muted)}
+.mini-row .m-val{font-weight:800;font-size:14px;text-align:right}
+.mini-row .m-val small{display:block;font-size:11px;font-weight:600}
+.kv{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:0}
+.kv .k{color:var(--ink-2);font-size:13.5px;font-weight:500;display:flex;align-items:center;gap:9px}
+.kv .k .ki{font-size:16px}
+.kv .v2{font-weight:700;font-size:14px}
+
+/* hero remaining card */
+.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:0;overflow:hidden;margin-bottom:20px}
+.hero .left{padding:24px}
+.hero .right{padding:24px;background:var(--surface-2);border-left:1px solid var(--line);
+  display:flex;flex-direction:column;justify-content:center}
+.hero .big{font-size:38px;font-weight:800;letter-spacing:-1px;margin:6px 0 4px}
+.progress{height:12px;background:var(--surface-2);border-radius:8px;overflow:hidden;margin-top:14px;border:1px solid var(--line)}
+.progress > i{display:block;height:100%;border-radius:8px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.hero .right .r-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:14px}
+.hero .right .r-row b{font-weight:700}
+
+/* category list */
+.cat-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.cat-item:last-child{border-bottom:0}
+.cat-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;flex-shrink:0}
+.cat-main{flex:1;min-width:0}
+.cat-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:7px}
+.cat-name{font-weight:700;font-size:14px}
+.cat-fig{font-size:13px;font-weight:600;color:var(--ink-2)}
+.cat-bar{height:7px;background:var(--surface-2);border-radius:5px;overflow:hidden}
+.cat-bar > i{display:block;height:100%;border-radius:5px;transition:width .5s ease}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.badge.ok{background:var(--good-soft);color:var(--good)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.over{background:var(--bad-soft);color:var(--bad)}
+.badge.none{background:var(--surface-2);color:var(--muted)}
+
+/* ---------- Entries ---------- */
+.filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);
+  font-size:13px;font-weight:600;color:var(--ink-2);transition:.15s}
+.chip:hover{border-color:#cdd3e3}
+.chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.day-group{margin-bottom:18px}
+.day-head{display:flex;justify-content:space-between;align-items:baseline;padding:4px 4px 10px;
+  font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.day-head .day-sum{color:var(--ink-2)}
+.entry{display:flex;align-items:center;gap:14px;padding:13px 16px;background:var(--surface);
+  border:1px solid var(--line);border-radius:13px;margin-bottom:8px;transition:.15s;box-shadow:var(--shadow)}
+.entry:hover{border-color:#cdd3e3}
+.entry .e-ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:19px;flex-shrink:0}
+.entry .e-mid{flex:1;min-width:0}
+.entry .e-title{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry .e-meta{font-size:12px;color:var(--muted);margin-top:1px}
+.entry .e-amt{font-weight:800;font-size:15px;letter-spacing:-.3px}
+.entry .e-del{color:var(--muted);font-size:15px;padding:6px;border-radius:8px;opacity:.55;transition:.15s;flex-shrink:0}
+.entry:hover .e-del{opacity:1}
+.entry .e-del:hover{background:var(--bad-soft);color:var(--bad)}
+
+/* empty */
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty .ee{font-size:42px;margin-bottom:10px}
+.empty .et{font-weight:600;color:var(--ink-2)}
+
+/* ---------- Budget rows ---------- */
+.budget-row{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
+.budget-row:last-child{border-bottom:0}
+.budget-row .b-main{flex:1}
+.budget-row .b-budget{font-weight:700;font-size:14px}
+.icon-btn{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--ink-2);
+  background:var(--surface-2);transition:.15s;font-size:15px}
+.icon-btn:hover{background:var(--primary-soft);color:var(--primary-ink)}
+.reorder{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.ord{width:26px;height:20px;border-radius:6px;display:grid;place-items:center;color:var(--muted);
+  background:var(--surface-2);font-size:10px;line-height:1;transition:.15s}
+.ord:hover:not(:disabled){background:var(--primary-soft);color:var(--primary-ink)}
+.ord:disabled{opacity:.3;cursor:default}
+.total-card{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:16px 20px;
+  background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border-radius:var(--r)}
+.total-card .tc-lbl{font-size:13px;opacity:.85;font-weight:600}
+.total-card .tc-val{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.btn-soft{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;
+  border-radius:12px;background:var(--primary-soft);color:var(--primary-ink);font-weight:700;font-size:14px;
+  border:1px dashed #c3c7f5;margin-top:16px;transition:.15s}
+.btn-soft:hover{background:#e6e8fe}
+.house-amount{display:flex;align-items:center;gap:8px;margin:14px 0 6px;padding:14px 18px;
+  border:1.5px solid var(--line);border-radius:14px;background:var(--surface-2);transition:.15s}
+.house-amount:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft);background:#fff}
+.house-amount > span:first-child{font-size:24px;font-weight:800;color:var(--muted)}
+.house-amount input{flex:1;border:0;background:none;outline:none;font-size:30px;font-weight:800;
+  letter-spacing:-1px;color:var(--ink);width:100%;min-width:0}
+.house-amount .ha-per{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.alloc{margin-top:14px}
+.alloc-head{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:8px}
+.alloc-note{font-size:13px;font-weight:600;margin-top:9px;padding:9px 13px;border-radius:10px}
+.alloc-note.ok{background:var(--good-soft);color:var(--good)}
+.alloc-note.left{background:var(--primary-soft);color:var(--primary-ink)}
+.alloc-note.over{background:var(--bad-soft);color:var(--bad)}
+
+/* reports */
+.report-bar{display:flex;align-items:center;gap:12px;padding:11px 0}
+.report-bar .rb-name{width:130px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.report-bar .rb-track{flex:1;height:24px;background:var(--surface-2);border-radius:7px;overflow:hidden}
+.report-bar .rb-track > i{display:flex;align-items:center;justify-content:flex-end;height:100%;
+  padding:0 8px;color:#fff;font-size:11px;font-weight:700;border-radius:7px;min-width:30px;transition:width .6s ease}
+
+/* ---------- FAB (mobile) ---------- */
+.fab{display:none;position:fixed;right:18px;bottom:84px;z-index:25;width:56px;height:56px;border-radius:18px;
+  background:var(--primary);color:#fff;font-size:26px;align-items:center;justify-content:center;
+  box-shadow:0 10px 26px rgba(79,70,229,.45)}
+
+/* ---------- Bottom tab (mobile) ---------- */
+.tabbar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:20;background:var(--surface);
+  border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.tabbar .tt{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0;
+  color:var(--muted);font-size:11px;font-weight:600}
+.tabbar .tt .ti{font-size:20px}
+.tabbar .tt.active{color:var(--primary-ink)}
+
+/* ---------- Bottom sheet ---------- */
+.sheet-bg{position:fixed;inset:0;z-index:40;background:rgba(15,20,40,.5);opacity:0;pointer-events:none;
+  transition:.25s;backdrop-filter:blur(2px)}
+.sheet-bg.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--surface);
+  border-radius:24px 24px 0 0;box-shadow:var(--shadow-lg);transform:translateY(100%);
+  transition:transform .32s cubic-bezier(.32,.72,0,1);max-height:92vh;overflow-y:auto;
+  padding:8px 22px calc(28px + env(safe-area-inset-bottom));pointer-events:none}
+.sheet.show{transform:translateY(0);pointer-events:auto}
+.sheet-grip{width:40px;height:5px;border-radius:3px;background:var(--line);margin:10px auto 6px}
+.sheet-h{font-size:18px;font-weight:800;margin:6px 0 4px}
+.sheet-sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+@media(min-width:861px){
+  .sheet{left:50%;right:auto;bottom:auto;top:50%;transform:translate(-50%,-46%) scale(.96);
+    width:480px;max-width:92vw;border-radius:22px;opacity:0;transition:.25s}
+  .sheet.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+  .sheet-grip{display:none}
+}
+
+/* form */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:7px}
+.field input,.field select{width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);
+  background:var(--surface);color:var(--ink);font-size:15px;outline:none;transition:.15s}
+.field input:focus,.field select:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+.field-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.amount-input{position:relative}
+.amount-input span{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--muted)}
+.amount-input input{padding-left:30px;font-size:20px;font-weight:800}
+.cat-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-bottom:4px}
+.cat-pick{display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border-radius:13px;
+  border:1.5px solid var(--line);background:var(--surface);transition:.15s;text-align:center}
+.cat-pick:hover{border-color:#cdd3e3}
+.cat-pick.sel{border-color:var(--primary);background:var(--primary-soft);box-shadow:0 0 0 3px var(--primary-soft)}
+.cat-pick.sel .cp-nm{color:var(--primary-ink)}
+.cat-pick .cp-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:18px}
+.cat-pick .cp-nm{font-size:11px;font-weight:600;color:var(--ink-2);line-height:1.2;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.live-note{padding:13px 15px;border-radius:12px;background:var(--good-soft);color:var(--good);
+  font-size:13.5px;font-weight:600;margin:6px 0 16px;display:flex;gap:9px;align-items:flex-start}
+.live-note.over{background:var(--bad-soft);color:var(--bad)}
+.live-note.neutral{background:var(--surface-2);color:var(--ink-2)}
+.sync-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.sync-dot.on{background:var(--good);box-shadow:0 0 0 3px var(--good-soft)}
+.sync-dot.err{background:var(--bad);box-shadow:0 0 0 3px var(--bad-soft)}
+.sync-dot.wait{background:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
+.sync-steps{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
+  padding:13px 15px;font-size:13px;color:var(--ink-2);margin-bottom:16px}
+.sync-steps ol li{margin:3px 0}
+.sheet .btn-primary{width:100%;justify-content:center;padding:15px;font-size:15px}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:30px;transform:translate(-50%,30px);z-index:60;
+  background:var(--ink);color:#fff;padding:13px 20px;border-radius:13px;font-size:14px;font-weight:600;
+  box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.3s;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* responsive */
+@media(max-width:860px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .topbar{padding:16px 18px}
+  .page-title{font-size:19px}
+  .top-actions .btn-primary{display:none}
+  .content{padding:18px 16px 110px}
+  .grid-stats{grid-template-columns:1fr;gap:12px}
+  .stat{display:flex;align-items:center;justify-content:space-between;padding:16px 18px}
+  .stat .val{font-size:22px;margin-top:0}
+  .stat .meta{display:none}
+  .hero{grid-template-columns:1fr}
+  .hero .right{border-left:0;border-top:1px solid var(--line)}
+  .hero .big{font-size:32px}
+  .fab{display:flex}
+  .tabbar{display:flex}
+  .month-sel input{width:96px;font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">🏠</div>
+      <div><div class="name">Ghar Kharch</div><div class="tag">Household Budget</div></div>
+    </div>
+    <nav class="nav" id="sideNav">
+      <a href="#" data-view="dash" class="active"><span class="ni">📊</span>Dashboard</a>
+      <a href="#" data-view="entries"><span class="ni">🧾</span>Entries</a>
+      <a href="#" data-view="budget"><span class="ni">🎯</span>Budget &amp; Categories</a>
+      <a href="#" data-view="reports"><span class="ni">📈</span>Reports</a>
+    </nav>
+    <div class="side-foot">
+      <button id="navExport"><span>⬇️</span>Export backup</button>
+      <button id="navImport"><span>⬆️</span>Import data</button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">Dashboard</div>
+        <div class="page-sub" id="pageSub">Aapke ghar ke kharch ka khulasa</div>
+      </div>
+      <div class="top-actions">
+        <div class="month-sel">📅 <input type="month" id="monthPick"></div>
+        <button class="btn-primary" id="addBtnTop">＋ New Entry</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- DASHBOARD -->
+      <section class="view active" id="view-dash">
+        <div class="card hero">
+          <div class="left">
+            <div class="muted" style="font-size:13px;font-weight:600">Is mahine baqi budget</div>
+            <div class="big" id="hLeft">₨0</div>
+            <div class="page-sub" id="hLeftSub">—</div>
+            <div class="progress"><i id="hBar" style="width:0%"></i></div>
+          </div>
+          <div class="right">
+            <div class="r-row"><span class="muted">Total budget</span><b id="hBudget">₨0</b></div>
+            <div class="r-row"><span class="muted">Kharch hua</span><b class="up" id="hSpent">₨0</b></div>
+            <div class="r-row"><span class="muted">Entries</span><b id="hCount">0</b></div>
+            <div class="r-row"><span class="muted">Roz ka average</span><b id="hAvg">₨0</b></div>
+          </div>
+        </div>
+
+        <div class="cols c-2">
+          <!-- LEFT: full category breakdown -->
+          <div class="card pad">
+            <div class="section-h"><h3>Category-wise hisab</h3><span class="muted" style="font-size:12px">budget / kharch</span></div>
+            <div id="dashCats"></div>
+          </div>
+          <!-- RIGHT: side panels -->
+          <div class="side-col">
+            <div class="card pad">
+              <div class="section-h"><h3>Is mahine ka khulasa</h3></div>
+              <div id="monthMini"></div>
+            </div>
+            <div class="card pad">
+              <div class="section-h"><h3>🔥 Sab se zyada kharch</h3></div>
+              <div id="quickStats"></div>
+            </div>
+            <div class="card pad" id="alertsCard" style="display:none">
+              <div class="section-h"><h3>⚠️ Budget alerts</h3></div>
+              <div id="alertsList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ENTRIES -->
+      <section class="view" id="view-entries">
+        <div class="cols c-2">
+          <div>
+            <div class="filters" id="entryFilters"></div>
+            <div id="entryList"></div>
+          </div>
+          <div class="side-col">
+            <div class="card pad">
+              <div class="section-h"><h3>Is mahine ka khulasa</h3></div>
+              <div id="entrySummary"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BUDGET -->
+      <section class="view" id="view-budget">
+        <div class="cols c-2">
+          <!-- LEFT: categories -->
+          <div class="card pad">
+            <div class="section-h"><h3>Har category ka budget</h3><span class="muted" style="font-size:12px">mahane ka</span></div>
+            <p class="muted" style="font-size:13px;margin-top:-8px">✏️ pe tap karke kisi bhi category ka budget set ya change karein.</p>
+            <div id="budgetList"></div>
+            <button class="btn-soft" id="addCatBtn">＋ Nayi category banayein</button>
+            <div class="total-card"><div class="tc-lbl">Sab categories ka jama budget</div><div class="tc-val" id="budgetTotal">₨0</div></div>
+          </div>
+
+          <!-- RIGHT: household total + allocation + backup -->
+          <div class="side-col">
+            <div class="card pad">
+              <div class="section-h"><h3>🏠 Pure ghar ka total budget</h3></div>
+              <p class="muted" style="font-size:13px;margin-top:-8px">Mahane mein pure ghar ka kul budget. Phir har category ko ismein se budget dein.</p>
+              <div class="house-amount">
+                <span>₨</span>
+                <input type="number" id="houseBudgetInput" inputmode="numeric" placeholder="0" min="0">
+                <span class="ha-per">/ mahina</span>
+              </div>
+              <div class="alloc">
+                <div class="alloc-head">
+                  <span class="muted">Categories ko di gayi raqam</span>
+                  <span id="allocFig">₨0 / ₨0</span>
+                </div>
+                <div class="cat-bar" style="height:9px"><i id="allocBar" style="width:0%;background:var(--primary)"></i></div>
+                <div class="alloc-note" id="allocNote">—</div>
+              </div>
+            </div>
+            <div class="card pad">
+              <div class="section-h"><h3>☁️ Cloud sync</h3><span class="sync-dot" id="syncDot" title="off"></span></div>
+              <p class="muted" style="font-size:13px;margin-top:-8px">iPhone aur desktop par ek hi data. Status: <b id="syncStatus">Band hai</b></p>
+              <button class="chip" id="syncSetupBtn" style="width:100%">🔗 Cloud sync setup / manage</button>
+            </div>
+            <div class="card pad">
+              <div class="section-h"><h3>Data &amp; backup</h3></div>
+              <p class="muted" style="font-size:13px;margin-top:-8px">Backup file save karein ya doosri jagah import karein.</p>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <button class="chip" id="bExport" style="width:100%">⬇️ Export backup</button>
+                <button class="chip" id="bImport" style="width:100%">⬆️ Import data</button>
+                <button class="chip" id="bReset" style="width:100%;color:var(--bad)">🗑️ Reset all</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORTS -->
+      <section class="view" id="view-reports">
+        <div class="grid-stats" id="reportKpis"></div>
+        <div class="cols c-2e">
+          <div class="card pad">
+            <div class="section-h"><h3>Kharch — category wise</h3></div>
+            <div id="reportBars"></div>
+          </div>
+          <div class="card pad">
+            <div class="section-h"><h3>Sab se bare 5 kharch</h3></div>
+            <div id="topExpenses"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- FAB + tabbar (mobile) -->
+<button class="fab" id="fab">＋</button>
+<nav class="tabbar" id="tabbar">
+  <button class="tt active" data-view="dash"><span class="ti">📊</span>Home</button>
+  <button class="tt" data-view="entries"><span class="ti">🧾</span>Entries</button>
+  <button class="tt" data-view="budget"><span class="ti">🎯</span>Budget</button>
+  <button class="tt" data-view="reports"><span class="ti">📈</span>Reports</button>
+</nav>
+
+<!-- ============ ADD ENTRY SHEET ============ -->
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="entrySheet">
+  <div class="sheet-grip"></div>
+  <div class="sheet-h">Naya kharch likhein</div>
+  <div class="sheet-sub">Category chunein, raqam likhein — baqi budget foran nazar aayega.</div>
+
+  <div class="field"><label>Category</label><div class="cat-picker" id="sheetCats"></div></div>
+
+  <div class="field-2">
+    <div class="field"><label>Raqam</label>
+      <div class="amount-input"><span>₨</span><input type="number" id="fAmount" inputmode="numeric" placeholder="0" min="0"></div>
+    </div>
+    <div class="field"><label>Tareekh</label><input type="date" id="fDate"></div>
+  </div>
+
+  <div class="field"><label>Kya liya? (tafseel)</label>
+    <input type="text" id="fItem" placeholder="jaise: Tamatar 1kg, Aloo 2kg / Internet bill">
+  </div>
+
+  <div class="live-note neutral" id="liveNote">Category chunein…</div>
+
+  <button class="btn-primary" id="saveEntry">Save karein</button>
+</div>
+
+<!-- ============ CATEGORY MODAL ============ -->
+<div class="sheet-bg" id="catBg"></div>
+<div class="sheet" id="catSheet">
+  <div class="sheet-grip"></div>
+  <div class="sheet-h" id="catSheetTitle">Nayi category</div>
+  <div class="sheet-sub">Naam, icon aur mahane ka fixed budget set karein.</div>
+  <div class="field-2">
+    <div class="field"><label>Icon (emoji)</label><input type="text" id="cIcon" maxlength="2" placeholder="🍎"></div>
+    <div class="field"><label>Monthly budget</label>
+      <div class="amount-input"><span>₨</span><input type="number" id="cBudget" inputmode="numeric" placeholder="5000" min="0"></div>
+    </div>
+  </div>
+  <div class="field"><label>Category ka naam</label><input type="text" id="cName" placeholder="jaise: Fruits"></div>
+  <div class="field"><label>Color</label><div class="cat-picker" id="colorPicker" style="grid-template-columns:repeat(auto-fill,minmax(46px,1fr))"></div></div>
+  <div class="live-note neutral" id="catLiveNote">—</div>
+  <button class="btn-primary" id="saveCat">Save category</button>
+  <button class="chip" id="deleteCat" style="width:100%;margin-top:10px;color:var(--bad);border-color:var(--bad-soft);display:none">🗑️ Is category ko delete karein</button>
+</div>
+
+<!-- ============ CLOUD SYNC SHEET ============ -->
+<div class="sheet-bg" id="syncBg"></div>
+<div class="sheet" id="syncSheet">
+  <div class="sheet-grip"></div>
+  <div class="sheet-h">☁️ Cloud sync setup</div>
+  <div class="sheet-sub">Ek baar setup karein — phir iPhone aur desktop par <b>same data</b>. Free Firebase istemal hota hai.</div>
+
+  <div class="sync-steps">
+    <b>Kaise milega Firebase config?</b> SETUP_SYNC.txt file mein poori guide hai. Mukhtasar:
+    <ol style="margin:8px 0 0;padding-left:18px">
+      <li>console.firebase.google.com par free project banayein</li>
+      <li>Firestore Database "on" karein (test/locked mode)</li>
+      <li>Web app (&lt;/&gt;) add karke <b>firebaseConfig</b> copy karein</li>
+      <li>Anonymous sign-in "Enable" karein (Authentication)</li>
+    </ol>
+  </div>
+
+  <div class="field"><label>Firebase config (poora { ... } paste karein)</label>
+    <textarea id="syncConfig" rows="7" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "projectId": "...",
+  "appId": "..."
+}' style="width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);font-family:monospace;font-size:12.5px;resize:vertical"></textarea>
+  </div>
+  <div class="field"><label>Ghar sync code (apna secret — dono devices par bilkul same likhein)</label>
+    <input type="text" id="syncCode" placeholder="jaise: ahmed-ghar-2026-xY7q" autocapitalize="off" autocorrect="off">
+    <div class="hint" style="background:none;border:0;padding:4px 0;color:var(--muted)">Lamba aur mushkil rakhein — yahi aap ke data ki chaabi hai. iPhone par bhi yahi code daalein.</div>
+  </div>
+
+  <div class="live-note neutral" id="syncNote">Abhi connect nahi hua.</div>
+  <button class="btn-primary" id="syncConnect">🔗 Connect &amp; Sync</button>
+  <button class="chip" id="syncDisconnect" style="width:100%;margin-top:10px;color:var(--bad);display:none">Disconnect</button>
+</div>
+
+<input type="file" id="importFile" accept="application/json" style="display:none">
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ helpers ============ */
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const PKR=n=>"₨"+Math.round(n||0).toLocaleString("en-PK");
+const KEY="ghar_kharch_v2";
+const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const monthOf=iso=>(iso||"").slice(0,7);
+
+const COLORS=["#ef4444","#f97316","#f59e0b","#eab308","#84cc16","#22c55e","#10b981","#14b8a6",
+  "#06b6d4","#3b82f6","#6366f1","#8b5cf6","#a855f7","#d946ef","#ec4899","#f43f5e","#64748b"];
+function tint(hex){ // soft background tint of a color
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},.12)`;
+}
+
+const DEFAULTS=[
+  {id:"bijli", name:"Bijli (Electricity)", icon:"💡", budget:5000,  color:"#f59e0b"},
+  {id:"gas",   name:"Gas Bill",            icon:"🔥", budget:2000,  color:"#f97316"},
+  {id:"net",   name:"Internet Bill",       icon:"🌐", budget:2500,  color:"#3b82f6"},
+  {id:"fruit", name:"Fruits",              icon:"🍎", budget:4000,  color:"#ec4899"},
+  {id:"sabzi", name:"Sabzi (Vegetables)",  icon:"🥦", budget:6000,  color:"#22c55e"},
+  {id:"ghosht",name:"Ghosht (Meat)",       icon:"🍖", budget:8000,  color:"#ef4444"},
+  {id:"parcel",name:"Parcels (Online)",    icon:"📦", budget:3000,  color:"#06b6d4"},
+  {id:"petrol",name:"Petrol / Fuel",       icon:"⛽", budget:6000,  color:"#0ea5e9"},
+  {id:"fastfood",name:"Fast Food",         icon:"🍔", budget:4000,  color:"#f43f5e"},
+  {id:"baby",  name:"Pampers / Doodh",     icon:"🍼", budget:5000,  color:"#8b5cf6"},
+  {id:"rashan",name:"Rashan (Grocery)",    icon:"🛒", budget:15000, color:"#14b8a6"},
+  {id:"other", name:"Other",               icon:"🧾", budget:3000,  color:"#64748b"},
+];
+
+let state=load();
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.cats){
+    if(s.houseBudget==null)s.houseBudget=0;
+    // migration: Petrol category ek baar add karo (agar mojood na ho)
+    if(!s._mig_petrol){
+      if(!s.cats.some(c=>c.id==="petrol"))
+        s.cats.push({id:"petrol",name:"Petrol / Fuel",icon:"⛽",budget:6000,color:"#0ea5e9"});
+      s._mig_petrol=true; localStorage.setItem(KEY,JSON.stringify(s));
+    }
+    if(!s._mig_fastfood){
+      if(!s.cats.some(c=>c.id==="fastfood"))
+        s.cats.push({id:"fastfood",name:"Fast Food",icon:"🍔",budget:4000,color:"#f43f5e"});
+      s._mig_fastfood=true; localStorage.setItem(KEY,JSON.stringify(s));
+    }
+    return s}}catch(e){}
+  return{cats:structuredClone(DEFAULTS),entries:[],houseBudget:0}}
+function persist(){localStorage.setItem(KEY,JSON.stringify(state))}
+function save(){state.updatedAt=Date.now();persist();if(window.cloudPush)window.cloudPush()}
+
+let curMonth=monthOf(todayISO());
+let sheetCat=DEFAULTS[0].id, entryFilter="all", editCat=null, pickedColor=COLORS[0];
+
+/* ============ data utils ============ */
+const catById=id=>state.cats.find(c=>c.id===id)||{name:"?",icon:"🧾",budget:0,color:"#64748b"};
+const monthEntries=m=>state.entries.filter(e=>monthOf(e.date)===m);
+const spentCat=(id,m)=>monthEntries(m).filter(e=>e.cat===id).reduce((a,e)=>a+(+e.amount||0),0);
+const totalBudget=()=>state.cats.reduce((a,c)=>a+(+c.budget||0),0); // sab categories ka jama
+const houseBudget=()=>+state.houseBudget>0?+state.houseBudget:totalBudget(); // pure ghar ka (set kiya hua, warna jama)
+const totalSpent=m=>monthEntries(m).reduce((a,e)=>a+(+e.amount||0),0);
+function statusOf(spent,bud){if(bud<=0)return"none";const p=spent/bud;return spent>bud?"over":p>.8?"warn":"ok"}
+function colorFor(st){return{ok:"var(--good)",warn:"var(--warn)",over:"var(--bad)",none:"var(--muted)"}[st]}
+
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2800)}
+
+/* ============ DASHBOARD ============ */
+function renderDash(){
+  const bud=houseBudget(),sp=totalSpent(curMonth),left=bud-sp;
+  const pct=bud>0?Math.min(100,sp/bud*100):0;
+  const now=new Date(), inCur=curMonth===monthOf(todayISO());
+  const days=inCur?now.getDate():new Date(curMonth.slice(0,4),curMonth.slice(5,7),0).getDate();
+  $("#hLeft").textContent=PKR(left);
+  $("#hLeft").style.color=left<0?"var(--bad)":"var(--ink)";
+  $("#hLeftSub").textContent=bud===0?"Budget set nahi — Budget tab par jayein"
+    : sp>bud?`Budget se ${PKR(sp-bud)} zyada kharch ho gaya`
+    : `${Math.round(pct)}% istemal — total ${PKR(bud)} mein se`;
+  const hb=$("#hBar");hb.style.width=pct+"%";
+  hb.style.background=sp>bud?"var(--bad)":pct>80?"var(--warn)":"linear-gradient(90deg,#6366f1,#4f46e5)";
+  $("#hBudget").textContent=PKR(bud);
+  $("#hSpent").textContent=PKR(sp);
+  $("#hCount").textContent=monthEntries(curMonth).length;
+  $("#hAvg").textContent=PKR(days>0?sp/days:0);
+
+  // ----- right side: month summary -----
+  const ents=monthEntries(curMonth);
+  const daysInMonth=new Date(curMonth.slice(0,4),curMonth.slice(5,7),0).getDate();
+  const daysLeft=inCur?Math.max(0,daysInMonth-now.getDate()):0;
+  // busiest day
+  const byDay={};ents.forEach(e=>byDay[e.date]=(byDay[e.date]||0)+(+e.amount||0));
+  let topDay=null,topDayVal=0;Object.keys(byDay).forEach(d=>{if(byDay[d]>topDayVal){topDayVal=byDay[d];topDay=d}});
+  // most-spent category
+  const topCatObj=[...state.cats].map(c=>({c,v:spentCat(c.id,curMonth)})).sort((a,b)=>b.v-a.v)[0];
+  const safeDaily=daysLeft>0?left/daysLeft:0;
+  $("#monthMini").innerHTML=`
+    <div class="kv"><span class="k"><span class="ki">💰</span>Ab tak bach gaya</span><span class="v2" style="color:${left<0?'var(--bad)':'var(--good)'};font-size:16px">${PKR(left)}</span></div>
+    <div class="kv"><span class="k"><span class="ki">🏆</span>Sab se zyada is par</span><span class="v2">${topCatObj&&topCatObj.v>0?topCatObj.c.icon+" "+topCatObj.c.name:"—"}<small style="display:block;font-weight:600;color:var(--bad)">${topCatObj&&topCatObj.v>0?PKR(topCatObj.v):""}</small></span></div>
+    <div class="kv"><span class="k"><span class="ki">📊</span>Roz ka average</span><span class="v2">${PKR(days>0?sp/days:0)}</span></div>
+    <div class="kv"><span class="k"><span class="ki">💸</span>Ab roz kar sakte</span><span class="v2" style="color:${safeDaily<0?'var(--bad)':'var(--good)'}">${inCur&&daysLeft>0?PKR(safeDaily)+"/din":"—"}</span></div>
+    <div class="kv"><span class="k"><span class="ki">📅</span>Sab se mehanga din</span><span class="v2">${topDay?new Date(topDay).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+" · "+PKR(topDayVal):"—"}</span></div>
+    <div class="kv"><span class="k"><span class="ki">📝</span>Total entries</span><span class="v2">${ents.length}</span></div>
+    <div class="kv"><span class="k"><span class="ki">⏳</span>Mahine ke baqi din</span><span class="v2">${inCur?daysLeft+" din":"—"}</span></div>`;
+
+  // ----- top spending categories (vertical mini rows) -----
+  const ranked=[...state.cats].map(c=>({c,sp:spentCat(c.id,curMonth)})).filter(x=>x.sp>0).sort((a,b)=>b.sp-a.sp).slice(0,5);
+  $("#quickStats").innerHTML=ranked.length?ranked.map(({c,sp})=>{
+    const bud=+c.budget||0,st=statusOf(sp,bud),left=bud-sp;
+    return `<div class="mini-row">
+      <div class="m-ic" style="background:${tint(c.color)}">${c.icon}</div>
+      <div class="m-mid"><div class="m-name">${c.name}</div>
+        <div class="m-sub" style="color:${colorFor(st)}">${bud>0?(left>=0?PKR(left)+" baqi":PKR(-left)+" zyada"):"no budget"}</div></div>
+      <div class="m-val">${PKR(sp)}</div>
+    </div>`}).join(""):`<div class="muted" style="font-size:13px;padding:8px 0">Abhi koi kharch nahi.</div>`;
+
+  // ----- alerts: over/near budget -----
+  const alerts=[...state.cats].map(c=>({c,sp:spentCat(c.id,curMonth)}))
+    .filter(({c,sp})=>{const b=+c.budget||0;return b>0&&sp>=b*0.8})
+    .sort((a,b)=>(b.sp/(+b.c.budget||1))-(a.sp/(+a.c.budget||1)));
+  if(alerts.length){
+    $("#alertsCard").style.display="";
+    $("#alertsList").innerHTML=alerts.map(({c,sp})=>{const b=+c.budget||0,over=sp>b;
+      return `<div class="mini-row">
+        <div class="m-ic" style="background:${over?'var(--bad-soft)':'var(--warn-soft)'}">${c.icon}</div>
+        <div class="m-mid"><div class="m-name">${c.name}</div>
+          <div class="m-sub" style="color:${over?'var(--bad)':'var(--warn)'}">${over?PKR(sp-b)+" budget se zyada!":Math.round(sp/b*100)+"% istemal ho gaya"}</div></div>
+      </div>`}).join("");
+  }else $("#alertsCard").style.display="none";
+
+  // full category breakdown — aap ki apni tarteeb mein (Budget page se upar/neeche)
+  $("#dashCats").innerHTML=state.cats.map(c=>{
+    const sp=spentCat(c.id,curMonth),bud=+c.budget||0,st=statusOf(sp,bud),left=bud-sp;
+    const pct=bud>0?Math.min(100,sp/bud*100):(sp>0?100:0);
+    const badge=bud===0?`<span class="badge none">no budget</span>`
+      :st==="over"?`<span class="badge over">${PKR(-left)} zyada</span>`
+      :`<span class="badge ${st}">${PKR(left)} baqi</span>`;
+    return `<div class="cat-item">
+      <div class="cat-ic" style="background:${tint(c.color)}">${c.icon}</div>
+      <div class="cat-main">
+        <div class="cat-top"><div class="cat-name">${c.name}</div>${badge}</div>
+        <div class="cat-bar"><i style="width:${pct}%;background:${c.color}"></i></div>
+        <div class="cat-fig" style="margin-top:6px">${PKR(sp)} <span class="muted">/ ${PKR(bud)}</span></div>
+      </div></div>`}).join("");
+}
+
+/* ============ ENTRIES ============ */
+function renderEntries(){
+  $("#entryFilters").innerHTML=
+    `<button class="chip ${entryFilter==='all'?'active':''}" data-f="all">Sab</button>`+
+    state.cats.map(c=>`<button class="chip ${entryFilter===c.id?'active':''}" data-f="${c.id}">${c.icon} ${c.name}</button>`).join("");
+  $$("#entryFilters .chip").forEach(b=>b.onclick=()=>{entryFilter=b.dataset.f;renderEntries()});
+
+  let list=monthEntries(curMonth).slice().sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
+  if(entryFilter!=="all")list=list.filter(e=>e.cat===entryFilter);
+  const box=$("#entryList");
+  if(!list.length){box.innerHTML=`<div class="empty"><div class="ee">🧾</div><div class="et">Koi entry nahi</div>
+    <div class="muted" style="font-size:13px;margin-top:4px">＋ button se naya kharch add karein</div></div>`;renderEntrySummary();return}
+
+  const groups={};list.forEach(e=>{(groups[e.date]=groups[e.date]||[]).push(e)});
+  box.innerHTML=Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date=>{
+    const daySum=groups[date].reduce((a,e)=>a+(+e.amount||0),0);
+    const d=new Date(date),lbl=d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+    const rows=groups[date].map(e=>{const c=catById(e.cat);
+      const desc=e.item||c.name;
+      return `<div class="entry">
+        <div class="e-ic" style="background:${tint(c.color)}">${c.icon}</div>
+        <div class="e-mid"><div class="e-title">${esc(desc)}</div><div class="e-meta">${c.name}</div></div>
+        <div class="e-amt">${PKR(e.amount)}</div>
+        <button class="e-del" data-del="${e.id}">✕</button>
+      </div>`}).join("");
+    return `<div class="day-group"><div class="day-head"><span>${lbl}</span><span class="day-sum">${PKR(daySum)}</span></div>${rows}</div>`;
+  }).join("");
+  $$("#entryList [data-del]").forEach(b=>b.onclick=()=>{
+    if(confirm("Ye entry delete karein?")){state.entries=state.entries.filter(x=>x.id!==b.dataset.del);save();renderAll();toast("Entry delete ho gayi")}});
+  renderEntrySummary();
+}
+function renderEntrySummary(){
+  const ents=monthEntries(curMonth), sp=totalSpent(curMonth), bud=houseBudget();
+  const cats=[...state.cats].map(c=>({c,v:spentCat(c.id,curMonth)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const box=$("#entrySummary");
+  if(!box)return;
+  box.innerHTML=`
+    <div class="kv"><span class="k"><span class="ki">💰</span>Total kharch</span><span class="v2">${PKR(sp)}</span></div>
+    <div class="kv"><span class="k"><span class="ki">🎯</span>Total budget</span><span class="v2">${PKR(bud)}</span></div>
+    <div class="kv"><span class="k"><span class="ki">🟢</span>Baqi</span><span class="v2" style="color:${bud-sp<0?'var(--bad)':'var(--good)'}">${PKR(bud-sp)}</span></div>
+    <div class="kv"><span class="k"><span class="ki">📝</span>Entries</span><span class="v2">${ents.length}</span></div>
+    <div style="margin-top:14px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Category wise</div>
+    ${cats.length?cats.map(({c,v})=>`<div class="mini-row">
+        <div class="m-ic" style="background:${tint(c.color)}">${c.icon}</div>
+        <div class="m-mid"><div class="m-name">${c.name}</div>
+          <div class="m-sub">${sp>0?Math.round(v/sp*100):0}% kul ka</div></div>
+        <div class="m-val">${PKR(v)}</div></div>`).join("")
+      :`<div class="muted" style="font-size:13px;padding:8px 0">Koi kharch nahi.</div>`}`;
+}
+function esc(s){return(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+/* ============ BUDGET ============ */
+function renderBudget(){
+  $("#budgetList").innerHTML=state.cats.map((c,i)=>`
+    <div class="budget-row">
+      <div class="reorder">
+        <button class="ord" data-up="${c.id}" ${i===0?"disabled":""}>▲</button>
+        <button class="ord" data-down="${c.id}" ${i===state.cats.length-1?"disabled":""}>▼</button>
+      </div>
+      <div class="cat-ic" style="background:${tint(c.color)}">${c.icon}</div>
+      <div class="b-main"><div class="cat-name">${c.name}</div>
+        <div class="muted" style="font-size:12px">is mahine ${PKR(spentCat(c.id,curMonth))} kharch</div></div>
+      <div class="b-budget">${PKR(c.budget)}<span class="muted" style="font-weight:500;font-size:12px">/mah</span></div>
+      <button class="icon-btn" data-edit="${c.id}">✏️</button>
+    </div>`).join("");
+  $$("#budgetList [data-edit]").forEach(b=>b.onclick=()=>openCat(b.dataset.edit));
+  $$("#budgetList [data-up]").forEach(b=>b.onclick=()=>moveCat(b.dataset.up,-1));
+  $$("#budgetList [data-down]").forEach(b=>b.onclick=()=>moveCat(b.dataset.down,1));
+  $("#budgetTotal").textContent=PKR(totalBudget());
+
+  // household budget + allocation summary
+  const house=+state.houseBudget||0, allocated=totalBudget();
+  const hi=$("#houseBudgetInput"); if(document.activeElement!==hi) hi.value=house>0?house:"";
+  const base=house>0?house:allocated;
+  const pct=base>0?Math.min(100,allocated/base*100):0;
+  $("#allocFig").textContent=PKR(allocated)+" / "+PKR(base);
+  const ab=$("#allocBar"); ab.style.width=pct+"%";
+  const note=$("#allocNote");
+  if(house<=0){note.className="alloc-note left";note.textContent="ℹ️ Upar pure ghar ka total budget set karein, phir categories ke saath compare hoga.";}
+  else if(allocated>house){note.className="alloc-note over";note.textContent=`⚠️ Categories ko ${PKR(allocated-house)} zyada de diya — total se ${PKR(allocated-house)} upar.`;ab.style.background="var(--bad)";}
+  else if(allocated<house){note.className="alloc-note left";note.textContent=`💡 Abhi ${PKR(house-allocated)} allocate karna baqi hai (kisi category ko de sakte hain).`;ab.style.background="var(--primary)";}
+  else{note.className="alloc-note ok";note.textContent="✅ Pura budget categories mein theek allocate ho gaya.";ab.style.background="var(--good)";}
+}
+
+// category ko upar/neeche karein (tarteeb badlein)
+function moveCat(id,dir){
+  const i=state.cats.findIndex(c=>c.id===id), j=i+dir;
+  if(i<0||j<0||j>=state.cats.length)return;
+  [state.cats[i],state.cats[j]]=[state.cats[j],state.cats[i]];
+  save();renderAll();
+}
+
+/* ============ REPORTS ============ */
+function renderReports(){
+  const sp=totalSpent(curMonth), bud=houseBudget();
+  const ents=monthEntries(curMonth);
+  const avg=ents.length?sp/ents.length:0;
+  $("#reportKpis").innerHTML=`
+    <div class="stat card"><div class="lbl"><span class="dot" style="background:var(--bad)"></span>Total kharch</div><div class="val">${PKR(sp)}</div></div>
+    <div class="stat card"><div class="lbl"><span class="dot" style="background:var(--primary)"></span>Total budget</div><div class="val">${PKR(bud)}</div></div>
+    <div class="stat card"><div class="lbl"><span class="dot" style="background:var(--good)"></span>Average / entry</div><div class="val">${PKR(avg)}</div></div>`;
+  const cats=[...state.cats].map(c=>({c,v:spentCat(c.id,curMonth)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const max=cats.length?cats[0].v:1;
+  $("#reportBars").innerHTML=cats.length?cats.map(({c,v})=>`
+    <div class="report-bar">
+      <div class="rb-name">${c.icon} ${c.name}</div>
+      <div class="rb-track"><i style="width:${Math.max(12,v/max*100)}%;background:${c.color}">${PKR(v)}</i></div>
+    </div>`).join("")
+    :`<div class="empty"><div class="ee">📈</div><div class="et">Is mahine koi kharch nahi</div></div>`;
+
+  const top=monthEntries(curMonth).slice().sort((a,b)=>(+b.amount)-(+a.amount)).slice(0,5);
+  $("#topExpenses").innerHTML=top.length?top.map(e=>{const c=catById(e.cat);
+    return `<div class="entry" style="box-shadow:none">
+      <div class="e-ic" style="background:${tint(c.color)}">${c.icon}</div>
+      <div class="e-mid"><div class="e-title">${esc(e.item||c.name)}</div>
+      <div class="e-meta">${c.name} · ${new Date(e.date).toLocaleDateString("en-GB",{day:"2-digit",month:"short"})}</div></div>
+      <div class="e-amt">${PKR(e.amount)}</div></div>`}).join("")
+    :`<div class="empty"><div class="et muted">Abhi tak koi entry nahi</div></div>`;
+}
+
+/* ============ ADD ENTRY SHEET ============ */
+function renderSheetCats(){
+  $("#sheetCats").innerHTML=state.cats.map(c=>`
+    <button type="button" class="cat-pick ${c.id===sheetCat?'sel':''}" data-c="${c.id}">
+      <div class="cp-ic" style="background:${tint(c.color)}">${c.icon}</div>
+      <div class="cp-nm">${c.name}</div></button>`).join("");
+}
+function updateLive(){
+  const c=catById(sheetCat),sp=spentCat(c.id,curMonth),bud=+c.budget||0,left=bud-sp;
+  const amt=+$("#fAmount").value||0,note=$("#liveNote");
+  if(bud===0){note.className="live-note neutral";note.innerHTML=`<span>ℹ️</span><span>${c.icon} ${c.name} ka budget set nahi. Budget tab se set karein.</span>`;return}
+  if(amt>0){
+    const after=left-amt;
+    if(after<0){note.className="live-note over";note.innerHTML=`<span>⚠️</span><span>Is ${PKR(amt)} ke baad <b>${c.name}</b> budget se <b>${PKR(-after)} zyada</b> ho jayega!</span>`}
+    else{note.className="live-note";note.innerHTML=`<span>✅</span><span>Is ${PKR(amt)} ke baad <b>${c.name}</b> mein <b>${PKR(after)} baqi</b> rahega.</span>`}
+  }else{
+    const st=statusOf(sp,bud);note.className="live-note "+(st==="over"?"over":st==="ok"?"":"neutral");
+    note.innerHTML=`<span>🎯</span><span>Abhi <b>${c.name}</b> mein <b>${PKR(left)} baqi</b> hai (${PKR(sp)}/${PKR(bud)})</span>`;
+  }
+}
+function openSheet(){renderSheetCats();$("#fDate").value=todayISO();$("#fAmount").value="";$("#fItem").value="";
+  updateLive();$("#sheetBg").classList.add("show");$("#entrySheet").classList.add("show")}
+function closeSheet(){$("#sheetBg").classList.remove("show");$("#entrySheet").classList.remove("show")}
+$("#saveEntry").onclick=()=>{
+  const amt=+$("#fAmount").value;
+  if(!amt||amt<=0){toast("Raqam likhein 🙏");$("#fAmount").focus();return}
+  const date=$("#fDate").value||todayISO();
+  state.entries.push({id:Date.now()+""+Math.floor(Math.random()*999),cat:sheetCat,amount:amt,date,item:$("#fItem").value.trim()});
+  save();const c=catById(sheetCat),left=(+c.budget||0)-spentCat(c.id,monthOf(date));
+  closeSheet();renderAll();
+  toast(`${c.icon} ${PKR(amt)} add — ${c.budget>0?(left>=0?PKR(left)+" baqi":"⚠️ "+PKR(-left)+" zyada"):"saved"}`);
+};
+
+/* ============ CATEGORY SHEET ============ */
+function renderColorPicker(){
+  $("#colorPicker").innerHTML=COLORS.map(col=>`
+    <button type="button" class="cat-pick ${col===pickedColor?'sel':''}" data-col="${col}" style="padding:6px">
+      <div class="cp-ic" style="background:${col};width:30px;height:30px"></div></button>`).join("");
+}
+function openCat(id){
+  editCat=id?catById(id):null;
+  $("#catSheetTitle").textContent=id?"Category edit karein":"Nayi category";
+  $("#cIcon").value=editCat?editCat.icon:"🧾";
+  $("#cName").value=editCat?editCat.name:"";
+  $("#cBudget").value=editCat?editCat.budget:"";
+  pickedColor=editCat?editCat.color:COLORS[Math.floor(Math.random()*COLORS.length)];
+  renderColorPicker();
+  $("#deleteCat").style.display=id?"block":"none";
+  updateCatLive();
+  $("#catBg").classList.add("show");$("#catSheet").classList.add("show");
+}
+// jab category ko budget dein to total mein se kitna baqi hai — live batao
+function updateCatLive(){
+  const note=$("#catLiveNote"), house=+state.houseBudget||0;
+  const otherAlloc=totalBudget()-(editCat?(+editCat.budget||0):0); // is category ke ilawa baqi sab ka jama
+  const entered=+$("#cBudget").value||0;
+  if(house<=0){note.className="live-note neutral";
+    note.innerHTML=`<span>ℹ️</span><span>Pure ghar ka total budget set nahi. Budget page par upar set karein, phir total mein se baqi raqam yahan nazar aayegi.</span>`;return}
+  const leftToAllocate=house-otherAlloc; // is category ko zyada se zyada itna de sakte hain
+  if(entered<=0){note.className="live-note neutral";
+    note.innerHTML=`<span>🏠</span><span>Total ${PKR(house)} mein se <b>${PKR(Math.max(0,leftToAllocate))} allocate karna baqi</b> hai. Itna is category ko de sakte hain.</span>`;return}
+  const after=leftToAllocate-entered;
+  if(after<0){note.className="live-note over";
+    note.innerHTML=`<span>🚫</span><span>Total budget khatam! Sirf <b>${PKR(Math.max(0,leftToAllocate))}</b> hi de sakte hain — ye <b>${PKR(-after)} zyada</b> hai.</span>`}
+  else{note.className="live-note";
+    note.innerHTML=`<span>✅</span><span>Theek hai. Is ${PKR(entered)} ke baad total mein se <b>${PKR(after)} aur</b> allocate kar sakte hain.</span>`}
+}
+function closeCat(){$("#catBg").classList.remove("show");$("#catSheet").classList.remove("show");editCat=null}
+$("#cBudget").addEventListener("input",updateCatLive);
+$("#saveCat").onclick=()=>{
+  const name=$("#cName").value.trim();
+  if(!name){toast("Category ka naam likhein");$("#cName").focus();return}
+  const icon=$("#cIcon").value.trim()||"🧾",budget=+$("#cBudget").value||0;
+  const dup=state.cats.find(c=>c.name.toLowerCase()===name.toLowerCase()&&c!==editCat);
+  if(dup){toast("Ye naam pehle se mojood hai");return}
+  // total budget se zyada allocate ho raha ho to confirm
+  const house=+state.houseBudget||0, otherAlloc=totalBudget()-(editCat?(+editCat.budget||0):0);
+  if(house>0 && otherAlloc+budget>house){
+    const extra=otherAlloc+budget-house;
+    if(!confirm(`Total ghar ka budget ${PKR(house)} hai aur ye ${PKR(extra)} zyada ho jayega.\n\nPhir bhi save karein?`))return;
+  }
+  if(editCat){Object.assign(editCat,{name,icon,budget,color:pickedColor})}
+  else{const id="c"+Date.now();state.cats.push({id,name,icon,budget,color:pickedColor});sheetCat=id}
+  save();closeCat();renderAll();toast(editCat?"Update ho gaya ✓":`Nayi category: ${icon} ${name}`);
+};
+$("#deleteCat").onclick=()=>{if(editCat&&confirm("Is category ko delete karein? (purani entries rahengi)")){
+  state.cats=state.cats.filter(c=>c.id!==editCat.id);save();closeCat();renderAll();toast("Category delete ho gayi")}};
+$("#addCatBtn").onclick=()=>openCat(null);
+
+/* ============ backup ============ */
+function doExport(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="ghar-kharch-backup-"+todayISO()+".json";a.click();toast("Backup download ho gaya ⬇️")}
+function doImport(){$("#importFile").click()}
+$("#importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.cats||!d.entries)throw 0;
+    if(confirm("Import se mojooda data replace ho jayega. Jari rakhein?")){state=d;save();renderAll();toast("Data import ho gaya ✓")}}
+    catch(_){toast("File theek nahi hai ✗")}$("#importFile").value=""};r.readAsText(f)};
+$("#navExport").onclick=doExport;$("#bExport").onclick=doExport;
+$("#navImport").onclick=doImport;$("#bImport").onclick=doImport;
+$("#bReset").onclick=()=>{if(confirm("Pakka sab data delete karna hai? Wapas nahi aayega.")){
+  state={cats:structuredClone(DEFAULTS),entries:[]};save();renderAll();toast("Sab reset ho gaya")}};
+
+/* ============ navigation ============ */
+const TITLES={dash:["Dashboard","Aapke ghar ke kharch ka khulasa"],
+  entries:["Entries","Is mahine ki tamam entries"],
+  budget:["Budget & Categories","Har category ka monthly budget"],
+  reports:["Reports","Kharch ka tafseeli jaiza"]};
+function go(view){
+  $$(".view").forEach(v=>v.classList.remove("active"));
+  $("#view-"+view).classList.add("active");
+  $$("#sideNav a").forEach(a=>a.classList.toggle("active",a.dataset.view===view));
+  $$("#tabbar .tt").forEach(t=>t.classList.toggle("active",t.dataset.view===view));
+  $("#pageTitle").textContent=TITLES[view][0];$("#pageSub").textContent=TITLES[view][1];
+  window.scrollTo(0,0);
+}
+$$("#sideNav a").forEach(a=>a.onclick=e=>{e.preventDefault();go(a.dataset.view)});
+$$("#tabbar .tt").forEach(t=>t.onclick=()=>go(t.dataset.view));
+
+/* ============ wire up ============ */
+$("#addBtnTop").onclick=openSheet;$("#fab").onclick=openSheet;
+$("#sheetBg").onclick=closeSheet;$("#catBg").onclick=closeCat;
+$("#fAmount").addEventListener("input",updateLive);
+// category picker (entry sheet) — delegated, re-render ke baad bhi chalta hai
+$("#sheetCats").addEventListener("click",e=>{
+  const b=e.target.closest(".cat-pick"); if(!b)return;
+  sheetCat=b.dataset.c; renderSheetCats(); updateLive();
+});
+// color picker (category sheet) — delegated
+$("#colorPicker").addEventListener("click",e=>{
+  const b=e.target.closest(".cat-pick"); if(!b)return;
+  pickedColor=b.dataset.col; renderColorPicker();
+});
+$("#monthPick").value=curMonth;
+$("#monthPick").onchange=e=>{curMonth=e.target.value||monthOf(todayISO());renderAll()};
+$("#houseBudgetInput").addEventListener("input",e=>{state.houseBudget=+e.target.value||0;save();renderBudget();renderDash()});
+
+function renderAll(){renderDash();renderEntries();renderBudget();renderReports()}
+renderAll();
+
+/* ============ CLOUD SYNC (Firebase) ============ */
+const SYNC_KEY="ghar_kharch_sync";
+let cloud={status:"off",docRef:null,unsub:null,applying:false,pushTimer:null,_fs:null,_lastPushAt:0};
+const loadSyncCfg=()=>{try{return JSON.parse(localStorage.getItem(SYNC_KEY))}catch(e){return null}};
+const saveSyncCfg=c=>localStorage.setItem(SYNC_KEY,JSON.stringify(c));
+const clearSyncCfg=()=>localStorage.removeItem(SYNC_KEY);
+
+function setSyncStatus(s,msg){
+  cloud.status=s;
+  const map={off:["","Band hai"],wait:["wait","Connect ho raha…"],on:["on","Synced ✓"],err:["err","Error"]};
+  const dot=$("#syncDot"),txt=$("#syncStatus"),note=$("#syncNote");
+  if(dot)dot.className="sync-dot "+map[s][0];
+  if(txt)txt.textContent=map[s][1];
+  if(note&&msg){note.className="live-note "+(s==="on"?"":s==="err"?"over":"neutral");note.textContent=msg}
+  const dc=$("#syncDisconnect");if(dc)dc.style.display=(s==="on"||s==="err")?"block":"none";
+}
+
+// config JS object ya JSON dono accept karo
+function parseConfig(raw){
+  if(!raw)throw new Error("khali hai");
+  const m=raw.match(/\{[\s\S]*\}/); if(!m)throw new Error("{ } nahi mila");
+  let s=m[0];
+  try{return JSON.parse(s)}catch(e){}
+  s=s.replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g,'$1"$2":').replace(/'/g,'"').replace(/,\s*}/g,'}').replace(/,\s*]/g,']');
+  return JSON.parse(s);
+}
+
+async function connectCloud(cfg,code,opts={}){
+  setSyncStatus("wait","Firebase se connect ho raha hai…");
+  try{
+    const V="https://www.gstatic.com/firebasejs/10.12.2/";
+    const appMod=await import(V+"firebase-app.js");
+    const authMod=await import(V+"firebase-auth.js");
+    const fsMod=await import(V+"firebase-firestore.js");
+    const app=appMod.initializeApp(cfg);
+    await authMod.signInAnonymously(authMod.getAuth(app));
+    const db=fsMod.getFirestore(app);
+    try{await fsMod.enableIndexedDbPersistence(db)}catch(e){}
+    const ref=fsMod.doc(db,"households",code);
+    cloud.docRef=ref;cloud._fs=fsMod;
+    const snap=await fsMod.getDoc(ref);
+    if(snap.exists()){
+      const remote=snap.data();
+      if((remote.updatedAt||0)>=(state.updatedAt||0))applyRemote(remote);
+      else await pushNow();
+    }else await pushNow();
+    cloud.unsub=fsMod.onSnapshot(ref,d=>{
+      if(!d.exists())return;
+      const remote=d.data();
+      if(remote.updatedAt&&remote.updatedAt===cloud._lastPushAt)return; // apna echo
+      if((remote.updatedAt||0)>(state.updatedAt||0))applyRemote(remote);
+    });
+    window.cloudPush=schedulePush;
+    setSyncStatus("on","Connected ✓ — data ab dono devices par sync hoga.");
+    if(!opts.silent)toast("Cloud sync on ✓");
+  }catch(err){
+    window.cloudPush=null;
+    setSyncStatus("err","Error: "+((err&&err.message)||err)+" — config/code aur internet check karein.");
+    if(!opts.silent)toast("Sync connect nahi hua");
+  }
+}
+function applyRemote(remote){
+  if(!remote||!remote.cats)return;
+  cloud.applying=true;
+  state=remote; if(state.houseBudget==null)state.houseBudget=0;
+  persist();renderAll();
+  const hi=$("#houseBudgetInput");if(hi&&document.activeElement!==hi)hi.value=(+state.houseBudget>0?state.houseBudget:"");
+  cloud.applying=false;
+}
+function schedulePush(){
+  if(!cloud.docRef||cloud.applying)return;
+  clearTimeout(cloud.pushTimer);cloud.pushTimer=setTimeout(pushNow,700);
+}
+async function pushNow(){
+  if(!cloud.docRef||!cloud._fs)return;
+  try{
+    const data=JSON.parse(JSON.stringify(state));
+    cloud._lastPushAt=data.updatedAt||0;
+    await cloud._fs.setDoc(cloud.docRef,data);
+    if(cloud.status!=="on")setSyncStatus("on","Synced ✓");
+  }catch(e){setSyncStatus("err","Save nahi hua: "+((e&&e.message)||e))}
+}
+function disconnectCloud(){
+  if(cloud.unsub)cloud.unsub();
+  cloud.unsub=null;cloud.docRef=null;window.cloudPush=null;clearSyncCfg();
+  setSyncStatus("off","");toast("Cloud sync band ho gaya");
+}
+
+// sync sheet wiring
+$("#syncSetupBtn").onclick=()=>{
+  const c=loadSyncCfg();
+  if(c){$("#syncConfig").value=c.configRaw||"";$("#syncCode").value=c.code||""}
+  $("#syncBg").classList.add("show");$("#syncSheet").classList.add("show");
+};
+$("#syncBg").onclick=()=>{$("#syncBg").classList.remove("show");$("#syncSheet").classList.remove("show")};
+$("#syncConnect").onclick=async()=>{
+  const raw=$("#syncConfig").value.trim(),code=$("#syncCode").value.trim();
+  if(!code){toast("Sync code likhein");return}
+  let cfg;try{cfg=parseConfig(raw)}catch(e){setSyncStatus("err","Config theek nahi: "+e.message);return}
+  saveSyncCfg({configRaw:raw,config:cfg,code});
+  await connectCloud(cfg,code);
+};
+$("#syncDisconnect").onclick=disconnectCloud;
+// auto-connect agar pehle se setup hai
+(function(){const c=loadSyncCfg();if(c&&c.config&&c.code)connectCloud(c.config,c.code,{silent:true})})();
+
+// PWA: service worker register (sirf https/hosted par chalega, file:// par nahi)
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>

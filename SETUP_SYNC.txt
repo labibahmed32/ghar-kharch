@@ -1,0 +1,92 @@
+==========================================================
+   GHAR KHARCH — CLOUD SYNC SETUP (Firebase) — FREE
+   iPhone aur Desktop par ek hi data
+==========================================================
+
+Ye ek baar ka setup hai (~5-7 minute). Sirf aap ke Google
+account se hoga. Bilkul free.
+
+----------------------------------------------------------
+STEP 1 — Firebase project banayein
+----------------------------------------------------------
+1. Browser mein kholein:  https://console.firebase.google.com
+2. "Add project" / "Create a project" par click.
+3. Naam likhein:  ghar-kharch   → Continue.
+4. "Google Analytics" ko OFF kar dein (zarurat nahi) → Continue.
+5. "Create project" → thodi der → "Continue".
+
+----------------------------------------------------------
+STEP 2 — Firestore Database on karein
+----------------------------------------------------------
+1. Left menu: Build → Firestore Database.
+2. "Create database" par click.
+3. Location: asia-south1 (ya jo qareeb ho) → Next.
+4. "Start in production mode" chunein → Create / Enable.
+
+5. Ab upar "Rules" tab par jayein, sab text mita kar ye paste karein:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /households/{code} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+6. "Publish" dabayein.
+
+----------------------------------------------------------
+STEP 3 — Anonymous sign-in on karein
+----------------------------------------------------------
+1. Left menu: Build → Authentication → "Get started".
+2. "Sign-in method" tab.
+3. List mein "Anonymous" chunein → toggle ENABLE → Save.
+
+----------------------------------------------------------
+STEP 4 — Web app config copy karein
+----------------------------------------------------------
+1. Upar bائيں taraf gear icon (⚙️) → "Project settings".
+2. Neeche scroll → "Your apps" → web icon  </>  par click.
+3. App nickname: ghar-kharch → "Register app".
+4. Screen par ek code dikhega, ismein se sirf ye hissa copy karein:
+
+   const firebaseConfig = {
+     apiKey: "....",
+     authDomain: "....",
+     projectId: "....",
+     storageBucket: "....",
+     messagingSenderId: "....",
+     appId: "...."
+   };
+
+   (Sirf  { ... }  wala hissa kaafi hai — pura paste kar dein to bhi chalega.)
+
+----------------------------------------------------------
+STEP 5 — App mein connect karein
+----------------------------------------------------------
+1. App kholein → neeche "Budget" tab → "☁️ Cloud sync setup".
+2. "Firebase config" box mein woh  { ... }  paste karein.
+3. "Ghar sync code" mein apna secret likhein, jaise:
+        ahmed-ghar-2026-xY7q
+   (Lamba aur mushkil rakhein — yahi data ki chaabi hai.)
+4. "Connect & Sync" dabayein → status "Synced ✓" ho jayega.
+
+----------------------------------------------------------
+STEP 6 — iPhone par bhi wahi
+----------------------------------------------------------
+1. iPhone par app kholein (hosted URL — HOST_GITHUB.txt dekhein).
+2. Budget → Cloud sync setup → WAHI config paste karein.
+3. WAHI "Ghar sync code" likhein (bilkul same) → Connect.
+
+Bas! Ab jahan bhi entry karenge, dono devices par turant
+update ho jayegi. Internet na ho to offline chalega, internet
+aate hi khud sync ho jayega.
+
+==========================================================
+NOTES
+- "Ghar sync code" kisi ko na batayein — yahi aap ke data ki key hai.
+- Free plan (Spark) ghar ke istemal ke liye kaafi se zyada hai.
+- Config ke "apiKey" ka public hona normal hai (Firebase aisa hi hai);
+  asal hifazat upar wale Rules + secret code se hoti hai.
+==========================================================
