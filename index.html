@@ -1020,7 +1020,10 @@ async function connectCloud(cfg,code,opts={}){
     const snap=await fsMod.getDoc(ref);
     if(snap.exists()){
       const remote=snap.data();
-      if((remote.updatedAt||0)>=(state.updatedAt||0))applyRemote(remote);
+      const localN=(state.entries||[]).length, remoteN=(remote.entries||[]).length;
+      // safety: agar local mein data hai aur cloud khali, to local ko bachao (push karo)
+      if(localN>0 && remoteN===0) await pushNow();
+      else if((remote.updatedAt||0)>=(state.updatedAt||0)) applyRemote(remote);
       else await pushNow();
     }else await pushNow();
     cloud.unsub=fsMod.onSnapshot(ref,d=>{
