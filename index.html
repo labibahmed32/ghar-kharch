@@ -111,14 +111,16 @@ input,select{font-family:inherit}
 
 /* hero remaining card */
 .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:0;overflow:hidden;margin-bottom:20px}
-.hero .left{padding:24px}
-.hero .right{padding:24px;background:var(--surface-2);border-left:1px solid var(--line);
-  display:flex;flex-direction:column;justify-content:center}
+.hero .left{padding:24px;display:flex;flex-direction:column;justify-content:center}
+.hero .right{padding:18px;background:var(--surface-2);border-left:1px solid var(--line);
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:center}
 .hero .big{font-size:38px;font-weight:800;letter-spacing:-1px;margin:6px 0 4px}
-.progress{height:12px;background:var(--surface-2);border-radius:8px;overflow:hidden;margin-top:14px;border:1px solid var(--line)}
+.progress{height:12px;background:#fff;border-radius:8px;overflow:hidden;margin-top:14px;border:1px solid var(--line)}
 .progress > i{display:block;height:100%;border-radius:8px;transition:width .5s cubic-bezier(.4,0,.2,1)}
-.hero .right .r-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:14px}
-.hero .right .r-row b{font-weight:700}
+.htile{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 14px;box-shadow:var(--shadow)}
+.htile .ht-lbl{font-size:12px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.htile .ht-val{font-size:19px;font-weight:800;letter-spacing:-.4px;margin-top:5px}
+.htile .ht-val.up{color:var(--bad)}
 
 /* category list */
 .cat-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
@@ -294,6 +296,12 @@ input,select{font-family:inherit}
   .fab{display:flex}
   .tabbar{display:flex}
   .month-sel input{width:96px;font-size:13px}
+  /* Entries mobile par poori nazar aayein (text wrap ho) */
+  .entry{align-items:flex-start;padding:12px 14px}
+  .entry .e-ic{margin-top:1px}
+  .entry .e-title{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;line-height:1.35}
+  .entry .e-del{opacity:.6;align-self:center}
+  .day-head{font-size:11px}
 }
 </style>
 </head>
@@ -336,16 +344,16 @@ input,select{font-family:inherit}
       <section class="view active" id="view-dash">
         <div class="card hero">
           <div class="left">
-            <div class="muted" style="font-size:13px;font-weight:600">Is mahine baqi budget</div>
+            <div class="muted" style="font-size:13px;font-weight:600">Remaining budget (is mahine)</div>
             <div class="big" id="hLeft">₨0</div>
             <div class="page-sub" id="hLeftSub">—</div>
             <div class="progress"><i id="hBar" style="width:0%"></i></div>
           </div>
           <div class="right">
-            <div class="r-row"><span class="muted">Total budget</span><b id="hBudget">₨0</b></div>
-            <div class="r-row"><span class="muted">Kharch hua</span><b class="up" id="hSpent">₨0</b></div>
-            <div class="r-row"><span class="muted">Entries</span><b id="hCount">0</b></div>
-            <div class="r-row"><span class="muted">Roz ka average</span><b id="hAvg">₨0</b></div>
+            <div class="htile"><div class="ht-lbl">🎯 Total budget</div><div class="ht-val" id="hBudget">₨0</div></div>
+            <div class="htile"><div class="ht-lbl">💸 Used</div><div class="ht-val up" id="hSpent">₨0</div></div>
+            <div class="htile"><div class="ht-lbl">🟢 Remaining</div><div class="ht-val" id="hRemain">₨0</div></div>
+            <div class="htile"><div class="ht-lbl">📝 Entries</div><div class="ht-val" id="hCount">0</div></div>
           </div>
         </div>
 
@@ -617,14 +625,14 @@ function renderDash(){
   $("#hLeft").textContent=PKR(left);
   $("#hLeft").style.color=left<0?"var(--bad)":"var(--ink)";
   $("#hLeftSub").textContent=bud===0?"Budget set nahi — Budget tab par jayein"
-    : sp>bud?`Budget se ${PKR(sp-bud)} zyada kharch ho gaya`
-    : `${Math.round(pct)}% istemal — total ${PKR(bud)} mein se`;
+    : sp>bud?`Over budget by ${PKR(sp-bud)}`
+    : `${Math.round(pct)}% used — ${PKR(bud)} total`;
   const hb=$("#hBar");hb.style.width=pct+"%";
   hb.style.background=sp>bud?"var(--bad)":pct>80?"var(--warn)":"linear-gradient(90deg,#6366f1,#4f46e5)";
   $("#hBudget").textContent=PKR(bud);
   $("#hSpent").textContent=PKR(sp);
+  const hr=$("#hRemain");hr.textContent=PKR(left);hr.style.color=left<0?"var(--bad)":"var(--good)";
   $("#hCount").textContent=monthEntries(curMonth).length;
-  $("#hAvg").textContent=PKR(days>0?sp/days:0);
 
   // ----- right side: month summary -----
   const ents=monthEntries(curMonth);
@@ -637,13 +645,13 @@ function renderDash(){
   const topCatObj=[...state.cats].map(c=>({c,v:spentCat(c.id,curMonth)})).sort((a,b)=>b.v-a.v)[0];
   const safeDaily=daysLeft>0?left/daysLeft:0;
   $("#monthMini").innerHTML=`
-    <div class="kv"><span class="k"><span class="ki">💰</span>Ab tak bach gaya</span><span class="v2" style="color:${left<0?'var(--bad)':'var(--good)'};font-size:16px">${PKR(left)}</span></div>
+    <div class="kv"><span class="k"><span class="ki">💰</span>Remaining (unused)</span><span class="v2" style="color:${left<0?'var(--bad)':'var(--good)'};font-size:16px">${PKR(left)}</span></div>
     <div class="kv"><span class="k"><span class="ki">🏆</span>Sab se zyada is par</span><span class="v2">${topCatObj&&topCatObj.v>0?topCatObj.c.icon+" "+topCatObj.c.name:"—"}<small style="display:block;font-weight:600;color:var(--bad)">${topCatObj&&topCatObj.v>0?PKR(topCatObj.v):""}</small></span></div>
     <div class="kv"><span class="k"><span class="ki">📊</span>Roz ka average</span><span class="v2">${PKR(days>0?sp/days:0)}</span></div>
     <div class="kv"><span class="k"><span class="ki">💸</span>Ab roz kar sakte</span><span class="v2" style="color:${safeDaily<0?'var(--bad)':'var(--good)'}">${inCur&&daysLeft>0?PKR(safeDaily)+"/din":"—"}</span></div>
     <div class="kv"><span class="k"><span class="ki">📅</span>Sab se mehanga din</span><span class="v2">${topDay?new Date(topDay).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+" · "+PKR(topDayVal):"—"}</span></div>
     <div class="kv"><span class="k"><span class="ki">📝</span>Total entries</span><span class="v2">${ents.length}</span></div>
-    <div class="kv"><span class="k"><span class="ki">⏳</span>Mahine ke baqi din</span><span class="v2">${inCur?daysLeft+" din":"—"}</span></div>`;
+    <div class="kv"><span class="k"><span class="ki">⏳</span>Days left</span><span class="v2">${inCur?daysLeft+" din":"—"}</span></div>`;
 
   // ----- top spending categories (vertical mini rows) -----
   const ranked=[...state.cats].map(c=>({c,sp:spentCat(c.id,curMonth)})).filter(x=>x.sp>0).sort((a,b)=>b.sp-a.sp).slice(0,5);
@@ -652,7 +660,7 @@ function renderDash(){
     return `<div class="mini-row">
       <div class="m-ic" style="background:${tint(c.color)}">${c.icon}</div>
       <div class="m-mid"><div class="m-name">${c.name}</div>
-        <div class="m-sub" style="color:${colorFor(st)}">${bud>0?(left>=0?PKR(left)+" baqi":PKR(-left)+" zyada"):"no budget"}</div></div>
+        <div class="m-sub" style="color:${colorFor(st)}">${bud>0?(left>=0?PKR(left)+" left":PKR(-left)+" over"):"no budget"}</div></div>
       <div class="m-val">${PKR(sp)}</div>
     </div>`}).join(""):`<div class="muted" style="font-size:13px;padding:8px 0">Abhi koi kharch nahi.</div>`;
 
@@ -666,7 +674,7 @@ function renderDash(){
       return `<div class="mini-row">
         <div class="m-ic" style="background:${over?'var(--bad-soft)':'var(--warn-soft)'}">${c.icon}</div>
         <div class="m-mid"><div class="m-name">${c.name}</div>
-          <div class="m-sub" style="color:${over?'var(--bad)':'var(--warn)'}">${over?PKR(sp-b)+" budget se zyada!":Math.round(sp/b*100)+"% istemal ho gaya"}</div></div>
+          <div class="m-sub" style="color:${over?'var(--bad)':'var(--warn)'}">${over?PKR(sp-b)+" over budget!":Math.round(sp/b*100)+"% used"}</div></div>
       </div>`}).join("");
   }else $("#alertsCard").style.display="none";
 
@@ -675,8 +683,8 @@ function renderDash(){
     const sp=spentCat(c.id,curMonth),bud=+c.budget||0,st=statusOf(sp,bud),left=bud-sp;
     const pct=bud>0?Math.min(100,sp/bud*100):(sp>0?100:0);
     const badge=bud===0?`<span class="badge none">no budget</span>`
-      :st==="over"?`<span class="badge over">${PKR(-left)} zyada</span>`
-      :`<span class="badge ${st}">${PKR(left)} baqi</span>`;
+      :st==="over"?`<span class="badge over">${PKR(-left)} over</span>`
+      :`<span class="badge ${st}">${PKR(left)} left</span>`;
     return `<div class="cat-item">
       <div class="cat-ic" style="background:${tint(c.color)}">${c.icon}</div>
       <div class="cat-main">
@@ -723,9 +731,9 @@ function renderEntrySummary(){
   const box=$("#entrySummary");
   if(!box)return;
   box.innerHTML=`
-    <div class="kv"><span class="k"><span class="ki">💰</span>Total kharch</span><span class="v2">${PKR(sp)}</span></div>
+    <div class="kv"><span class="k"><span class="ki">💸</span>Used (kharch)</span><span class="v2" style="color:var(--bad)">${PKR(sp)}</span></div>
     <div class="kv"><span class="k"><span class="ki">🎯</span>Total budget</span><span class="v2">${PKR(bud)}</span></div>
-    <div class="kv"><span class="k"><span class="ki">🟢</span>Baqi</span><span class="v2" style="color:${bud-sp<0?'var(--bad)':'var(--good)'}">${PKR(bud-sp)}</span></div>
+    <div class="kv"><span class="k"><span class="ki">🟢</span>Remaining (unused)</span><span class="v2" style="color:${bud-sp<0?'var(--bad)':'var(--good)'}">${PKR(bud-sp)}</span></div>
     <div class="kv"><span class="k"><span class="ki">📝</span>Entries</span><span class="v2">${ents.length}</span></div>
     <div style="margin-top:14px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Category wise</div>
     ${cats.length?cats.map(({c,v})=>`<div class="mini-row">
@@ -819,11 +827,11 @@ function updateLive(){
   if(bud===0){note.className="live-note neutral";note.innerHTML=`<span>ℹ️</span><span>${c.icon} ${c.name} ka budget set nahi. Budget tab se set karein.</span>`;return}
   if(amt>0){
     const after=left-amt;
-    if(after<0){note.className="live-note over";note.innerHTML=`<span>⚠️</span><span>Is ${PKR(amt)} ke baad <b>${c.name}</b> budget se <b>${PKR(-after)} zyada</b> ho jayega!</span>`}
-    else{note.className="live-note";note.innerHTML=`<span>✅</span><span>Is ${PKR(amt)} ke baad <b>${c.name}</b> mein <b>${PKR(after)} baqi</b> rahega.</span>`}
+    if(after<0){note.className="live-note over";note.innerHTML=`<span>⚠️</span><span>Is ${PKR(amt)} ke baad <b>${c.name}</b> <b>${PKR(-after)} over budget</b> ho jayega!</span>`}
+    else{note.className="live-note";note.innerHTML=`<span>✅</span><span>Is ${PKR(amt)} ke baad <b>${c.name}</b> mein <b>${PKR(after)} Remaining</b> rahega.</span>`}
   }else{
     const st=statusOf(sp,bud);note.className="live-note "+(st==="over"?"over":st==="ok"?"":"neutral");
-    note.innerHTML=`<span>🎯</span><span>Abhi <b>${c.name}</b> mein <b>${PKR(left)} baqi</b> hai (${PKR(sp)}/${PKR(bud)})</span>`;
+    note.innerHTML=`<span>🎯</span><span>Abhi <b>${c.name}</b> mein <b>${PKR(left)} Remaining</b> (Used ${PKR(sp)} / ${PKR(bud)})</span>`;
   }
 }
 function openSheet(){renderSheetCats();$("#fDate").value=todayISO();$("#fAmount").value="";$("#fItem").value="";
@@ -836,7 +844,7 @@ $("#saveEntry").onclick=()=>{
   state.entries.push({id:Date.now()+""+Math.floor(Math.random()*999),cat:sheetCat,amount:amt,date,item:$("#fItem").value.trim()});
   save();const c=catById(sheetCat),left=(+c.budget||0)-spentCat(c.id,monthOf(date));
   closeSheet();renderAll();
-  toast(`${c.icon} ${PKR(amt)} add — ${c.budget>0?(left>=0?PKR(left)+" baqi":"⚠️ "+PKR(-left)+" zyada"):"saved"}`);
+  toast(`${c.icon} ${PKR(amt)} add — ${c.budget>0?(left>=0?PKR(left)+" Remaining":"⚠️ "+PKR(-left)+" over"):"saved"}`);
 };
 
 /* ============ CATEGORY SHEET ============ */
